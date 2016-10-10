@@ -475,8 +475,11 @@ private[spark] class MesosClusterScheduler(
           val portmaps = submission.schedulerProperties
             .get("spark.mesos.executor.docker.portmaps")
             .map(MesosSchedulerBackendUtil.parsePortMappingsSpec)
+          val parameters = submission.schedulerProperties
+           .get("spark.mesos.executor.docker.property.net")
+           .map(MesosSchedulerBackendUtil.parseParameterSpec)
           MesosSchedulerBackendUtil.addDockerInfo(
-            container, image, volumes = volumes, portmaps = portmaps)
+            container, image, volumes = volumes, portmaps = portmaps, parameters = parameters))
           taskInfo.setContainer(container.build())
         }
         val queuedTasks = tasks.getOrElseUpdate(offer.offer.getId, new ArrayBuffer[TaskInfo])
