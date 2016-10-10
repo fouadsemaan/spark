@@ -17,7 +17,7 @@
 
 package org.apache.spark.scheduler.cluster.mesos
 
-import org.apache.mesos.Protos.{ContainerInfo, Volume}
+import org.apache.mesos.Protos.{ContainerInfo, Volume, Parameter}
 import org.apache.mesos.Protos.ContainerInfo.DockerInfo
 
 import org.apache.spark.{Logging, SparkConf}
@@ -100,6 +100,16 @@ private[mesos] object MesosSchedulerBackendUtil extends Logging {
     .toList
   }
 
+  * Safely construct a Docker Parameter. If the name is empty, return None.
+  */
+  def parseParameterSpec(value: String): List[Parameter] = {
+  List(Parameter
+    .newBuilder()
+    .setKey("net")
+    .setValue(value)
+    .build())
+  }
+
   /**
    * Construct a DockerInfo structure and insert it into a ContainerInfo
    */
@@ -108,12 +118,14 @@ private[mesos] object MesosSchedulerBackendUtil extends Logging {
       image: String,
       volumes: Option[List[Volume]] = None,
       network: Option[ContainerInfo.DockerInfo.Network] = None,
-      portmaps: Option[List[ContainerInfo.DockerInfo.PortMapping]] = None): Unit = {
+      portmaps: Option[List[ContainerInfo.DockerInfo.PortMapping]] = None,
+      parameters: Option[List[Parameter]]): Unit = {
 
     val docker = ContainerInfo.DockerInfo.newBuilder().setImage(image)
 
     network.foreach(docker.setNetwork)
     portmaps.foreach(_.foreach(docker.addPortMappings))
+    parameters.foreach(_.foreach(docker.addParameters))
     container.setType(ContainerInfo.Type.DOCKER)
     container.setDocker(docker.build())
     volumes.foreach(_.foreach(container.addVolumes))
